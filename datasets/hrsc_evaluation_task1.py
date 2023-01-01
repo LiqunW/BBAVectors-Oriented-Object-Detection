@@ -11,12 +11,14 @@
     search for PATH_TO_BE_CONFIGURED to config the paths
     Note, the evaluation is on the large scale images
 """
+import sys
+sys.path.insert(1, 'datasets/DOTA_devkit/')
 import xml.etree.ElementTree as ET
 import os
 #import cPickle
 import numpy as np
 import matplotlib.pyplot as plt
-from . import polyiou
+import polyiou
 from functools import partial
 import cv2
 

@@ -3,9 +3,8 @@ import torch.nn as nn
 import os
 import numpy as np
 import loss
-import cv2
+from torch.utils.tensorboard import SummaryWriter
 import func_utils
-
 
 def collater(data):
     out_data_dict = {}
@@ -77,10 +76,16 @@ class TrainModule(object):
         return model, optimizer, epoch
 
     def train_network(self, args):
+        datapth = args.checkpoint
+        if not os.path.exists(datapth):
+            os.makedirs(datapth)
+        # 定义tensorboard存储
+        self.writer = SummaryWriter(os.path.join(datapth, 'log'))
 
+        # 定义其他训练参数
         self.optimizer = torch.optim.Adam(self.model.parameters(), args.init_lr)
         self.scheduler = torch.optim.lr_scheduler.ExponentialLR(self.optimizer, gamma=0.96, last_epoch=-1)
-        save_path = 'weights_'+args.dataset
+        save_path = os.path.join(datapth, 'weights_'+args.dataset)
         start_epoch = 1
         
         # add resume part for continuing training when break previously, 10-16-2020
@@ -124,27 +129,45 @@ class TrainModule(object):
         print('Starting training...')
         train_loss = []
         ap_list = []
+        loss_index = 0
+        mAP_max = 0
         for epoch in range(start_epoch, args.num_epoch+1):
             print('-'*10)
             print('Epoch: {}/{} '.format(epoch, args.num_epoch))
-            epoch_loss = self.run_epoch(phase='train',
-                                        data_loader=dsets_loader['train'],
-                                        criterion=criterion)
+            epoch_loss, loss_list = self.run_epoch(phase='train',
+                                                    data_loader=dsets_loader['train'],
+                                                    criterion=criterion)
             train_loss.append(epoch_loss)
             self.scheduler.step(epoch)
 
+            # 将loss绘制tensorboard
+            for index, loss_i in enumerate(loss_list):
+                loss_index += 1
+                self.writer.add_scalar('Loss', loss_i, loss_index)
+
             np.savetxt(os.path.join(save_path, 'train_loss.txt'), train_loss, fmt='%.6f')
 
-            if epoch % 5 == 0 or epoch > 20:
+            if epoch % 10 == 0:
+                # 修改为每10个保存一次
                 self.save_model(os.path.join(save_path, 'model_{}.pth'.format(epoch)),
                                 epoch,
                                 self.model,
                                 self.optimizer)
 
-            if 'test' in self.dataset_phase[args.dataset] and epoch%5==0:
+            if 'test' in self.dataset_phase[args.dataset] and epoch%1==0:
                 mAP = self.dec_eval(args, dsets['test'])
+                # 将ap绘制tensorboard
+                self.writer.add_scalar('mAP', mAP, epoch)
                 ap_list.append(mAP)
                 np.savetxt(os.path.join(save_path, 'ap_list.txt'), ap_list, fmt='%.6f')
+
+                # 添加最优模型存储
+                if mAP > mAP_max:
+                    mAP_max = mAP
+                    self.save_model(os.path.join(save_path, 'model_best.pth'),
+                                    epoch,
+                                    self.model,
+                                    self.optimizer)
 
             self.save_model(os.path.join(save_path, 'model_last.pth'),
                             epoch,
@@ -157,6 +180,7 @@ class TrainModule(object):
         else:
             self.model.eval()
         running_loss = 0.
+        loss_list = []
         for data_dict in data_loader:
             for name in data_dict:
                 data_dict[name] = data_dict[name].to(device=self.device, non_blocking=True)
@@ -171,12 +195,14 @@ class TrainModule(object):
                 with torch.no_grad():
                     pr_decs = self.model(data_dict['input'])
                     loss = criterion(pr_decs, data_dict)
-
+            # 存储loss输出
+            loss_list.append(loss)
             running_loss += loss.item()
         epoch_loss = running_loss / len(data_loader)
         print('{} loss: {}'.format(phase, epoch_loss))
+        if phase == 'train':
+            return epoch_loss, loss_list
         return epoch_loss
-
 
     def dec_eval(self, args, dsets):
         result_path = 'result_'+args.dataset

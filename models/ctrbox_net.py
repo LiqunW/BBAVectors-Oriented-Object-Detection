@@ -3,29 +3,33 @@ import numpy as np
 import torch
 from .model_parts import CombinationModule
 from . import resnet
+from .import repvgg
 
 class CTRBOX(nn.Module):
     def __init__(self, heads, pretrained, down_ratio, final_kernel, head_conv):
         super(CTRBOX, self).__init__()
-        channels = [3, 64, 256, 512, 1024, 2048]
+        # channels = [3, 64, 256, 512, 1024, 2048]
+        # channels = [3, 64, 192, 384, 768, 2560]
+        channels = [3, 64, 160, 320, 640, 2560]
         assert down_ratio in [2, 4, 8, 16]
         self.l1 = int(np.log2(down_ratio))
-        self.base_network = resnet.resnet101(pretrained=pretrained)
-        self.dec_c2 = CombinationModule(512, 256, batch_norm=True)
-        self.dec_c3 = CombinationModule(1024, 512, batch_norm=True)
-        self.dec_c4 = CombinationModule(2048, 1024, batch_norm=True)
+        # self.base_network = resnet.resnet101(pretrained=pretrained)
+        self.base_network = repvgg.RepVGG("RepVGG-D2se", "models/pre_train/RepVGG-D2se-200epochs-train.pth", pretrained=pretrained)
+        self.dec_c2 = CombinationModule(channels[3], channels[2], batch_norm=True)
+        self.dec_c3 = CombinationModule(channels[4], channels[3], batch_norm=True)
+        self.dec_c4 = CombinationModule(channels[5], channels[4], batch_norm=True)
         self.heads = heads
 
         for head in self.heads:
             classes = self.heads[head]
             if head == 'wh':
                 fc = nn.Sequential(nn.Conv2d(channels[self.l1], head_conv, kernel_size=3, padding=1, bias=True),
-                                #    nn.BatchNorm2d(head_conv),   # BN not used in the paper, but would help stable training
+                                   nn.BatchNorm2d(head_conv),   # BN not used in the paper, but would help stable training
                                    nn.ReLU(inplace=True),
                                    nn.Conv2d(head_conv, classes, kernel_size=3, padding=1, bias=True))
             else:
                 fc = nn.Sequential(nn.Conv2d(channels[self.l1], head_conv, kernel_size=3, padding=1, bias=True),
-                                #    nn.BatchNorm2d(head_conv),   # BN not used in the paper, but would help stable training
+                                   nn.BatchNorm2d(head_conv),   # BN not used in the paper, but would help stable training
                                    nn.ReLU(inplace=True),
                                    nn.Conv2d(head_conv, classes, kernel_size=final_kernel, stride=1, padding=final_kernel // 2, bias=True))
             if 'hm' in head:

@@ -181,12 +181,12 @@ class TestModule(object):
                     box = np.asarray([bl, tl, tr, br], np.float32)
                     box = np.int0(box)
                     cv2.drawContours(ori_image, [box], 0, (255, 255, 255), 1)
-
-            cv2.imshow('pr_image', ori_image)
-            k = cv2.waitKey(0) & 0xFF
-            if k == ord('q'):
-                cv2.destroyAllWindows()
-                exit()
+            cv2.imwrite('pr_image/{}_draw.jpg'.format(img_id), ori_image)
+            # cv2.imshow('pr_image', ori_image)
+            # k = cv2.waitKey(0) & 0xFF
+            # if k == ord('q'):
+            #     cv2.destroyAllWindows()
+            #     exit()
             #"""
 
         total_time = total_time[1:]
