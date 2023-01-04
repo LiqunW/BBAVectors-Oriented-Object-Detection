@@ -53,6 +53,7 @@ class RepVGGBlock(nn.Module):
         if self.alpha:
             self.alpha_1 = torch.nn.Parameter(torch.ones(1, dtype=torch.float32), requires_grad=True)
             self.alpha_2 = torch.nn.Parameter(torch.ones(1, dtype=torch.float32), requires_grad=True)
+            self.alpha_w = torch.nn.Parameter(torch.ones(1, dtype=torch.float32), requires_grad=True)
 
     def forward(self, inputs):
         if hasattr(self, 'rbr_reparam'):
@@ -63,7 +64,7 @@ class RepVGGBlock(nn.Module):
         else:
             id_out = self.rbr_identity(inputs)
         if self.alpha:
-            return self.nonlinearity(self.se(self.rbr_dense(inputs) + self.alpha_1 * self.rbr_1x1(inputs) +
+            return self.nonlinearity(self.alpha_w * self.se(self.rbr_dense(inputs) + self.alpha_1 * self.rbr_1x1(inputs) +
                                              self.alpha_2 * id_out))
         else:
             return self.nonlinearity(self.se(self.rbr_dense(inputs) + self.rbr_1x1(inputs) + id_out))

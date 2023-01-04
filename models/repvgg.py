@@ -15,7 +15,7 @@ class RepVGG(torch.nn.Module):
             if 'state_dict' in checkpoint:
                 checkpoint = checkpoint['state_dict']
             ckpt = {k.replace('module.', ''): v for k, v in checkpoint.items()}  # strip the names
-            backbone.load_state_dict(ckpt)
+            backbone.load_state_dict(ckpt, strict=False)
         self.layer0, self.layer1, self.layer2, self.layer3, self.layer4 = backbone.stage0, backbone.stage1, \
                                                                           backbone.stage2, backbone.stage3, \
                                                                           backbone.stage4
@@ -41,7 +41,7 @@ class RepVGG(torch.nn.Module):
 
 
 if __name__ == "__main__":
-    model = RepVGG("RepVGG-D2se")
+    model = RepVGG("RepVGG-B3")
 
     input = torch.rand(4, 3, 608, 608)
     # model.eval()

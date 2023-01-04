@@ -9,12 +9,12 @@ class CTRBOX(nn.Module):
     def __init__(self, heads, pretrained, down_ratio, final_kernel, head_conv):
         super(CTRBOX, self).__init__()
         # channels = [3, 64, 256, 512, 1024, 2048]
-        # channels = [3, 64, 192, 384, 768, 2560]
-        channels = [3, 64, 160, 320, 640, 2560]
+        channels = [3, 64, 192, 384, 768, 2560]
+        # channels = [3, 64, 160, 320, 640, 2560]
         assert down_ratio in [2, 4, 8, 16]
         self.l1 = int(np.log2(down_ratio))
         # self.base_network = resnet.resnet101(pretrained=pretrained)
-        self.base_network = repvgg.RepVGG("RepVGG-D2se", "models/pre_train/RepVGG-D2se-200epochs-train.pth", pretrained=pretrained)
+        self.base_network = repvgg.RepVGG("RepVGG-B3", "models/pre_train/RepVGG-B3-200epochs-train.pth", pretrained=pretrained)
         self.dec_c2 = CombinationModule(channels[3], channels[2], batch_norm=True)
         self.dec_c3 = CombinationModule(channels[4], channels[3], batch_norm=True)
         self.dec_c4 = CombinationModule(channels[5], channels[4], batch_norm=True)
