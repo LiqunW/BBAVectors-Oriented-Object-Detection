@@ -147,28 +147,33 @@ class TestModule(object):
                     tr = np.asarray([pred[2], pred[3]], np.float32)
                     br = np.asarray([pred[4], pred[5]], np.float32)
                     bl = np.asarray([pred[6], pred[7]], np.float32)
-
-                    tt = (np.asarray(tl, np.float32) + np.asarray(tr, np.float32)) / 2
-                    rr = (np.asarray(tr, np.float32) + np.asarray(br, np.float32)) / 2
-                    bb = (np.asarray(bl, np.float32) + np.asarray(br, np.float32)) / 2
-                    ll = (np.asarray(tl, np.float32) + np.asarray(bl, np.float32)) / 2
-
                     box = np.asarray([tl, tr, br, bl], np.float32)
-                    cen_pts = np.mean(box, axis=0)
-                    cv2.line(ori_image, (int(cen_pts[0]), int(cen_pts[1])), (int(tt[0]), int(tt[1])), (0,0,255),1,1)
-                    cv2.line(ori_image, (int(cen_pts[0]), int(cen_pts[1])), (int(rr[0]), int(rr[1])), (255,0,255),1,1)
-                    cv2.line(ori_image, (int(cen_pts[0]), int(cen_pts[1])), (int(bb[0]), int(bb[1])), (0,255,0),1,1)
-                    cv2.line(ori_image, (int(cen_pts[0]), int(cen_pts[1])), (int(ll[0]), int(ll[1])), (255,0,0),1,1)
-
-                    # cv2.line(ori_image, (int(cen_pts[0]), int(cen_pts[1])), (int(tl[0]), int(tl[1])), (0,0,255),1,1)
-                    # cv2.line(ori_image, (int(cen_pts[0]), int(cen_pts[1])), (int(tr[0]), int(tr[1])), (255,0,255),1,1)
-                    # cv2.line(ori_image, (int(cen_pts[0]), int(cen_pts[1])), (int(br[0]), int(br[1])), (0,255,0),1,1)
-                    # cv2.line(ori_image, (int(cen_pts[0]), int(cen_pts[1])), (int(bl[0]), int(bl[1])), (255,0,0),1,1)
-                    ori_image = cv2.drawContours(ori_image, [np.int0(box)], -1, (255,0,255),1,1)
-                    # box = cv2.boxPoints(cv2.minAreaRect(box))
-                    # ori_image = cv2.drawContours(ori_image, [np.int0(box)], -1, (0,255,0),1,1)
+                    # tl = np.asarray([pred[0], pred[1]], np.float32)
+                    # tr = np.asarray([pred[2], pred[3]], np.float32)
+                    # br = np.asarray([pred[4], pred[5]], np.float32)
+                    # bl = np.asarray([pred[6], pred[7]], np.float32)
+                    #
+                    # tt = (np.asarray(tl, np.float32) + np.asarray(tr, np.float32)) / 2
+                    # rr = (np.asarray(tr, np.float32) + np.asarray(br, np.float32)) / 2
+                    # bb = (np.asarray(bl, np.float32) + np.asarray(br, np.float32)) / 2
+                    # ll = (np.asarray(tl, np.float32) + np.asarray(bl, np.float32)) / 2
+                    #
+                    # box = np.asarray([tl, tr, br, bl], np.float32)
+                    # cen_pts = np.mean(box, axis=0)
+                    # cv2.line(ori_image, (int(cen_pts[0]), int(cen_pts[1])), (int(tt[0]), int(tt[1])), (0,0,255),1,1)
+                    # cv2.line(ori_image, (int(cen_pts[0]), int(cen_pts[1])), (int(rr[0]), int(rr[1])), (255,0,255),1,1)
+                    # cv2.line(ori_image, (int(cen_pts[0]), int(cen_pts[1])), (int(bb[0]), int(bb[1])), (0,255,0),1,1)
+                    # cv2.line(ori_image, (int(cen_pts[0]), int(cen_pts[1])), (int(ll[0]), int(ll[1])), (255,0,0),1,1)
+                    #
+                    # # cv2.line(ori_image, (int(cen_pts[0]), int(cen_pts[1])), (int(tl[0]), int(tl[1])), (0,0,255),1,1)
+                    # # cv2.line(ori_image, (int(cen_pts[0]), int(cen_pts[1])), (int(tr[0]), int(tr[1])), (255,0,255),1,1)
+                    # # cv2.line(ori_image, (int(cen_pts[0]), int(cen_pts[1])), (int(br[0]), int(br[1])), (0,255,0),1,1)
+                    # # cv2.line(ori_image, (int(cen_pts[0]), int(cen_pts[1])), (int(bl[0]), int(bl[1])), (255,0,0),1,1)
+                    # ori_image = cv2.drawContours(ori_image, [np.int0(box)], -1, (255,0,255),1,1)
+                    # # box = cv2.boxPoints(cv2.minAreaRect(box))
+                    ori_image = cv2.drawContours(ori_image, [np.int0(box)], -1, (0,255,0),1,1)
                     cv2.putText(ori_image, '{:.2f} {}'.format(score, cat), (int(box[1][0]), int(box[1][1])),
-                                cv2.FONT_HERSHEY_COMPLEX, 0.5, (0,255,255), 1,1)
+                                cv2.FONT_HERSHEY_COMPLEX, 0.5, (0,0,255), 1,1)
 
             if args.dataset == 'hrsc':
                 gt_anno = dsets.load_annotation(cnt)

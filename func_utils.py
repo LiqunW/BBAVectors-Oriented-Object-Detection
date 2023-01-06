@@ -17,13 +17,14 @@ def decode_prediction(predictions, dsets, args, img_id, down_ratio):
         rr = np.asarray([pred[4], pred[5]], np.float32)
         bb = np.asarray([pred[6], pred[7]], np.float32)
         ll = np.asarray([pred[8], pred[9]], np.float32)
-        tl = tt + ll - cen_pt
-        bl = bb + ll - cen_pt
-        tr = tt + rr - cen_pt
-        br = bb + rr - cen_pt
+        # tl = tt + ll - cen_pt
+        # bl = bb + ll - cen_pt
+        # tr = tt + rr - cen_pt
+        # br = bb + rr - cen_pt
         score = pred[10]
         clse = pred[11]
-        pts = np.asarray([tr, br, bl, tl], np.float32)
+        # pts = np.asarray([tr, br, bl, tl], np.float32)
+        pts = np.asarray([tt, rr, bb, ll], np.float32)
         pts[:, 0] = pts[:, 0] * down_ratio / args.input_w * w
         pts[:, 1] = pts[:, 1] * down_ratio / args.input_h * h
         pts0[dsets.category[int(clse)]].append(pts)
@@ -59,8 +60,9 @@ def write_results(args,
         data_dict = dsets.__getitem__(index)
         image = data_dict['image'].to(device)
         img_id = data_dict['img_id']
-        image_w = data_dict['image_w']
-        image_h = data_dict['image_h']
+        # img_img = cv2.imread('/data/dataset/HRSC2016/data_dir/AllImages/{}.bmp'.format(img_id))
+        # image_w = data_dict['image_w']
+        # image_h = data_dict['image_h']
 
         with torch.no_grad():
             pr_decs = model(image)

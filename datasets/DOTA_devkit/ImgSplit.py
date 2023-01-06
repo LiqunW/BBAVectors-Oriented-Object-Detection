@@ -240,6 +240,6 @@ class splitbase():
 
 if __name__ == '__main__':
     # example usage of ImgSplit
-    split = splitbase(r'/workspace/fuye/Oriented-Object-Detection/DOTA1_0/val',
-                       r'/workspace/fuye/Oriented-Object-Detection/DOTA1_0/val_split')
+    split = splitbase(r'/work/20221209_Aerial_Photograph/data/dota1/val',
+                       r'/work/20221209_Aerial_Photograph/data/dota1.0/val')
     split.splitdata(1)

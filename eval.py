@@ -44,7 +44,7 @@ class EvalModule(object):
                                  self.device,
                                  self.decoder,
                                  result_path,
-                                 print_ps=True)
+                                 print_ps=False)
 
         if args.dataset == 'dota':
             merge_path = 'merge_'+args.dataset

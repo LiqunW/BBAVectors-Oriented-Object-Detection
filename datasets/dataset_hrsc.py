@@ -61,10 +61,10 @@ class HRSC(BaseDataset):
             mbox_ang = float(obj.find('mbox_ang').text)*180/np.pi
             rect = ((mbox_cx, mbox_cy), (mbox_w, mbox_h), mbox_ang)
             pts_4 = cv2.boxPoints(rect)  # 4 x 2
-            bl = pts_4[0,:]
-            tl = pts_4[1,:]
-            tr = pts_4[2,:]
-            br = pts_4[3,:]
+            bl = pts_4[0, :]
+            tl = pts_4[1, :]
+            tr = pts_4[2, :]
+            br = pts_4[3, :]
             valid_pts.append([bl, tl, tr, br])
             valid_cat.append(self.cat_ids['ship'])
             valid_dif.append(difficult)
