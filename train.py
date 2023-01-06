@@ -156,7 +156,7 @@ class TrainModule(object):
                                 self.model,
                                 self.optimizer)
 
-            if 'test' in self.dataset_phase[args.dataset] and epoch % 1 == 0:
+            if 'test' in self.dataset_phase[args.dataset] and epoch % 10 == 0:
                 mAP = self.dec_eval(args, dsets['test'])
                 # 将ap绘制tensorboard
                 self.writer.add_scalar('mAP', mAP, epoch)
