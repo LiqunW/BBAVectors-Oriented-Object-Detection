@@ -250,8 +250,8 @@ class BaseDataset(data.Dataset):
             # # draw
             # copy_image2 = cv2.drawContours(copy_image2, [np.int0(pts_4)], -1, (0, 255, 0), 1, 1)
             # cv2.imwrite("test1.jpg", copy_image2)
-            copy_image2 = cv2.drawContours(copy_image2, [np.int0(box)], -1, (0, 255, 0), 1, 1)
-            cv2.imwrite("test.jpg", copy_image2)
+            # copy_image2 = cv2.drawContours(copy_image2, [np.int0(box)], -1, (0, 255, 0), 1, 1)
+            # cv2.imwrite("test.jpg", copy_image2)
             # cv2.line(copy_image2, (cen_x, cen_y), (int(cen_x), int(cen_y-wh[k, 9]/2)), (0, 0, 255), 1, 1)
             # cv2.line(copy_image2, (cen_x, cen_y), (int(cen_x+wh[k, 8]/2), int(cen_y)), (255, 0, 255), 1, 1)
             # cv2.line(copy_image2, (cen_x, cen_y), (int(cen_x), int(cen_y+wh[k, 9]/2)), (0, 255, 255), 1, 1)
