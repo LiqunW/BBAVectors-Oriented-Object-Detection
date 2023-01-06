@@ -31,7 +31,7 @@ def parse_args():
     parser.add_argument('--K', type=int, default=500, help='Maximum of objects')
     parser.add_argument('--conf_thresh', type=float, default=0.18, help='Confidence threshold, 0.1 for general evaluation')
     parser.add_argument('--ngpus', type=int, default=1, help='Number of gpus, ngpus>1 for multigpu')
-    parser.add_argument('--checkpoint', type=str, default='./save_res_0103_dota_B3_alpha3', help='checkpoint save pth')
+    parser.add_argument('--checkpoint', type=str, default='./save_res_0104_dota_B3_alpha3', help='checkpoint save pth')
     parser.add_argument('--resume_train', type=str, default='', help='Weights resumed in training')
     parser.add_argument('--resume', type=str, default='', help='Weights resumed in testing and evaluation')
     parser.add_argument('--dataset', type=str, default='dota', help='Name of dataset hrsc|dota')
