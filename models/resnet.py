@@ -200,21 +200,21 @@ class ResNet(nn.Module):
 
     def forward(self, x):
         feat = []
-        feat.append(x)       # C0
+        feat.append(x)       # C0  b,3,h,w
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)
-        feat.append(x)       # C1
+        feat.append(x)       # C1 b,64,h/2,w/2
         x = self.maxpool(x)
 
         x = self.layer1(x)
-        feat.append(x)       # C2
+        feat.append(x)       # C2 b,256,h/4,w/4
         x = self.layer2(x)
-        feat.append(x)       # C3
+        feat.append(x)       # C3 b,512,h/8,w/8
         x = self.layer3(x)
-        feat.append(x)       # C4
+        feat.append(x)       # C4 b,1024,h/16,w/16
         x = self.layer4(x)
-        feat.append(x)       # C5
+        feat.append(x)       # C5 b,2048,h/32,w/32
 
 
         # x = self.avgpool(x)

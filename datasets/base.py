@@ -152,7 +152,6 @@ class BaseDataset(data.Dataset):
 
 
     def generate_ground_truth(self, image, annotation):
-        copy_image1 = image.copy()
         image = np.asarray(np.clip(image, a_min=0., a_max=255.), np.float32)
         image = self.image_distort(np.asarray(image, np.float32))
         image = np.asarray(np.clip(image, a_min=0., a_max=255.), np.float32)
@@ -162,7 +161,7 @@ class BaseDataset(data.Dataset):
         image_w = self.input_w // self.down_ratio
 
         hm = np.zeros((self.num_classes, image_h, image_w), dtype=np.float32)
-        wh = np.zeros((self.max_objs, 4), dtype=np.float32)
+        wh = np.zeros((self.max_objs, 10), dtype=np.float32)
         ## add
         cls_theta = np.zeros((self.max_objs, 1), dtype=np.float32)
         ## add end
@@ -171,8 +170,8 @@ class BaseDataset(data.Dataset):
         reg_mask = np.zeros((self.max_objs), dtype=np.uint8)
         num_objs = min(annotation['rect'].shape[0], self.max_objs)
         # ###################################### view Images #######################################
-        copy_image1 = cv2.resize(copy_image1, (image_w, image_h))
-        copy_image2 = copy_image1.copy()
+        # copy_image1 = cv2.resize(image, (image_w, image_h))
+        # copy_image2 = copy_image1.copy()
         # ##########################################################################################
         for k in range(num_objs):
             rect = annotation['rect'][k, :]
@@ -189,41 +188,23 @@ class BaseDataset(data.Dataset):
             # generate wh ground_truth
             pts_4 = cv2.boxPoints(((cen_x, cen_y), (bbox_w, bbox_h), theta))  # 4 x 2
 
-            # # 获取到真实的box四点坐标
-            # bl = pts_4[0,:]
-            # tl = pts_4[1,:]
-            # tr = pts_4[2,:]
-            # br = pts_4[3,:]
+            bl = pts_4[0,:]
+            tl = pts_4[1,:]
+            tr = pts_4[2,:]
+            br = pts_4[3,:]
 
-            # img = np.array(np.ones((200, 200, 3)), dtype=np.uint8)
-            # green = (0, 255, 0)
-            # pts_4_int = np.array(pts_4, dtype=np.int)
-            # img = cv2.line(img, pts_4_int[0], pts_4_int[1], green)
-            # img = cv2.line(img, pts_4_int[1], pts_4_int[2], green)
-            # img = cv2.line(img, pts_4_int[2], pts_4_int[3], green)
-            # img = cv2.line(img, pts_4_int[3], pts_4_int[0], green)
-            # cv2.imwrite("test1.jpg", img)
-            #
-            # # 获取到真实的box四边的中心点
-            # tt = (np.asarray(tl, np.float32)+np.asarray(tr, np.float32)) / 2
-            # rr = (np.asarray(tr, np.float32)+np.asarray(br, np.float32)) / 2
-            # bb = (np.asarray(bl, np.float32)+np.asarray(br, np.float32)) / 2
-            # ll = (np.asarray(tl, np.float32)+np.asarray(bl, np.float32)) / 2
-            #
-            #
-            # if theta in [-90.0, -0.0, 0.0]:  # (-90, 0]
-            #     tt,rr,bb,ll = self.reorder_pts(tt,rr,bb,ll)
+            tt = (np.asarray(tl,np.float32)+np.asarray(tr,np.float32))/2
+            rr = (np.asarray(tr,np.float32)+np.asarray(br,np.float32))/2
+            bb = (np.asarray(bl,np.float32)+np.asarray(br,np.float32))/2
+            ll = (np.asarray(tl,np.float32)+np.asarray(bl,np.float32))/2
+
+            if theta in [-90.0, -0.0, 0.0]:  # (-90, 0]
+                tt,rr,bb,ll = self.reorder_pts(tt,rr,bb,ll)
             # rotational channel
-            # 获取到真实的box四边的中心点
-            # wh[k, 0:2] = tt - ct
-            # wh[k, 2:4] = rr - ct
-            # wh[k, 4:6] = bb - ct
-            # wh[k, 6:8] = ll - ct
-            # 获取极坐标位置差异
-            w_hbbox, h_hbbox = self.cal_bbox_wh(pts_4)
-            wh[k, 0] = sorted(pts_4, key= lambda x:x[1])[0][0] - ct[0]
-            wh[k, 1] = - sorted(pts_4, key= lambda x:x[0])[0][1] + ct[1]
-
+            wh[k, 0:2] = tt - ct
+            wh[k, 2:4] = rr - ct
+            wh[k, 4:6] = bb - ct
+            wh[k, 6:8] = ll - ct
             #####################################################################################
             # # draw
             # cv2.line(copy_image1, (cen_x, cen_y), (int(tt[0]), int(tt[1])), (0, 0, 255), 1, 1)
@@ -232,26 +213,10 @@ class BaseDataset(data.Dataset):
             # cv2.line(copy_image1, (cen_x, cen_y), (int(ll[0]), int(ll[1])), (255, 0, 0), 1, 1)
             #####################################################################################
             # horizontal channel
-            # w_hbbox, h_hbbox = self.cal_bbox_wh(pts_4)
-            wh[k, 2:4] = 1. * w_hbbox, 1. * h_hbbox
+            w_hbbox, h_hbbox = self.cal_bbox_wh(pts_4)
+            wh[k, 8:10] = 1. * w_hbbox, 1. * h_hbbox
             #####################################################################################
-            tt_x = (cen_x - wh[k, 2] / 2)   # 左上x
-            tt_y = (cen_y - wh[k, 1] )  # 左上x
-
-            rr_x = (cen_x + wh[k, 0] )   # 右上x
-            rr_y = (cen_y - wh[k, 3] / 2)  # 左上x
-
-            bb_x = (cen_x + wh[k, 2] / 2)  # 右下x
-            bb_y = (cen_y + wh[k, 1])  # # 右下y
-
-            ll_x = (cen_x - wh[k, 0] ) # 左下x
-            ll_y = (cen_y + wh[k, 3] / 2)  # 左下y
-            box = np.array([[tt_x, tt_y], [rr_x, rr_y], [bb_x, bb_y], [ll_x, ll_y]])
             # # draw
-            # copy_image2 = cv2.drawContours(copy_image2, [np.int0(pts_4)], -1, (0, 255, 0), 1, 1)
-            # cv2.imwrite("test1.jpg", copy_image2)
-            # copy_image2 = cv2.drawContours(copy_image2, [np.int0(box)], -1, (0, 255, 0), 1, 1)
-            # cv2.imwrite("test.jpg", copy_image2)
             # cv2.line(copy_image2, (cen_x, cen_y), (int(cen_x), int(cen_y-wh[k, 9]/2)), (0, 0, 255), 1, 1)
             # cv2.line(copy_image2, (cen_x, cen_y), (int(cen_x+wh[k, 8]/2), int(cen_y)), (255, 0, 255), 1, 1)
             # cv2.line(copy_image2, (cen_x, cen_y), (int(cen_x), int(cen_y+wh[k, 9]/2)), (0, 255, 255), 1, 1)
@@ -261,7 +226,6 @@ class BaseDataset(data.Dataset):
             # if abs(theta)>3 and abs(theta)<90-3:
             #     cls_theta[k, 0] = 1
             # v1
-            ##### 判断其IOU和外框是不是大于0.95,以此判断是不是旋转框
             jaccard_score = ex_box_jaccard(pts_4.copy(), self.cal_bbox_pts(pts_4).copy())
             if jaccard_score<0.95:
                 cls_theta[k, 0] = 1
@@ -277,6 +241,7 @@ class BaseDataset(data.Dataset):
         #             cv2.destroyAllWindows()
         #             exit()
         # #########################################################################################
+
         ret = {'input': image,
                'hm': hm,
                'reg_mask': reg_mask,

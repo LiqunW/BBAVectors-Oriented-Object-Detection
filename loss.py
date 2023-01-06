@@ -113,9 +113,6 @@ class LossAll(torch.nn.Module):
     def forward(self, pr_decs, gt_batch):
         hm_loss  = self.L_hm(pr_decs['hm'], gt_batch['hm'])
         wh_loss  = self.L_wh(pr_decs['wh'], gt_batch['reg_mask'], gt_batch['ind'], gt_batch['wh'])
-        # wh_loss_1 = self.L_wh(pr_decs['wh'][:,:2,...], gt_batch['reg_mask'], gt_batch['ind'], gt_batch['wh'][..., :2])
-        # wh_loss_2 = self.L_wh(pr_decs['wh'][:,-2:,...], gt_batch['reg_mask'], gt_batch['ind'], gt_batch['wh'][..., -2:])
-        # wh_loss = wh_loss_1 + wh_loss_2
         off_loss = self.L_off(pr_decs['reg'], gt_batch['reg_mask'], gt_batch['ind'], gt_batch['reg'])
         ## add
         cls_theta_loss = self.L_cls_theta(pr_decs['cls_theta'], gt_batch['reg_mask'], gt_batch['ind'], gt_batch['cls_theta'])

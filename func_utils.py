@@ -17,14 +17,13 @@ def decode_prediction(predictions, dsets, args, img_id, down_ratio):
         rr = np.asarray([pred[4], pred[5]], np.float32)
         bb = np.asarray([pred[6], pred[7]], np.float32)
         ll = np.asarray([pred[8], pred[9]], np.float32)
-        # tl = tt + ll - cen_pt
-        # bl = bb + ll - cen_pt
-        # tr = tt + rr - cen_pt
-        # br = bb + rr - cen_pt
+        tl = tt + ll - cen_pt
+        bl = bb + ll - cen_pt
+        tr = tt + rr - cen_pt
+        br = bb + rr - cen_pt
         score = pred[10]
         clse = pred[11]
-        # pts = np.asarray([tr, br, bl, tl], np.float32)
-        pts = np.asarray([tt, rr, bb, ll], np.float32)
+        pts = np.asarray([tr, br, bl, tl], np.float32)
         pts[:, 0] = pts[:, 0] * down_ratio / args.input_w * w
         pts[:, 1] = pts[:, 1] * down_ratio / args.input_h * h
         pts0[dsets.category[int(clse)]].append(pts)
@@ -56,42 +55,49 @@ def write_results(args,
                   result_path,
                   print_ps=False):
     results = {cat: {img_id: [] for img_id in dsets.img_ids} for cat in dsets.category}
+    # 修改成batch size 为4 推理
+    batchsize = 4
+    img_list = []
+    img_id_list = []
     for index in range(len(dsets)):
         data_dict = dsets.__getitem__(index)
         image = data_dict['image'].to(device)
         img_id = data_dict['img_id']
-        # img_img = cv2.imread('/data/dataset/HRSC2016/data_dir/AllImages/{}.bmp'.format(img_id))
-        # image_w = data_dict['image_w']
-        # image_h = data_dict['image_h']
+        img_list.append(image)
+        img_id_list.append(img_id)
+        if (index % batchsize == 0 or index == len(dsets) -1) and index >= batchsize - 1:
+            img_merge = torch.stack(img_list)[:,0,:]
+            with torch.no_grad():
+                pr_decs_list = model(img_merge)
+            for batch_i in range(len(img_list)):
+                img_id = img_id_list[batch_i]
+                pr_decs = {key:value[batch_i:batch_i+1] for key, value in pr_decs_list.items()}
+                decoded_pts = []
+                decoded_scores = []
+                torch.cuda.synchronize(device)
+                predictions = decoder.ctdet_decode(pr_decs)
+                pts0, scores0 = decode_prediction(predictions, dsets, args, img_id, down_ratio)
+                decoded_pts.append(pts0)
+                decoded_scores.append(scores0)
 
-        with torch.no_grad():
-            pr_decs = model(image)
-
-
-        decoded_pts = []
-        decoded_scores = []
-        torch.cuda.synchronize(device)
-        predictions = decoder.ctdet_decode(pr_decs)
-        pts0, scores0 = decode_prediction(predictions, dsets, args, img_id, down_ratio)
-        decoded_pts.append(pts0)
-        decoded_scores.append(scores0)
-
-        # nms
-        for cat in dsets.category:
-            if cat == 'background':
-                continue
-            pts_cat = []
-            scores_cat = []
-            for pts0, scores0 in zip(decoded_pts, decoded_scores):
-                pts_cat.extend(pts0[cat])
-                scores_cat.extend(scores0[cat])
-            pts_cat = np.asarray(pts_cat, np.float32)
-            scores_cat = np.asarray(scores_cat, np.float32)
-            if pts_cat.shape[0]:
-                nms_results = non_maximum_suppression(pts_cat, scores_cat)
-                results[cat][img_id].extend(nms_results)
-        if print_ps:
-            print('testing {}/{} data {}'.format(index+1, len(dsets), img_id))
+                # nms
+                for cat in dsets.category:
+                    if cat == 'background':
+                        continue
+                    pts_cat = []
+                    scores_cat = []
+                    for pts0, scores0 in zip(decoded_pts, decoded_scores):
+                        pts_cat.extend(pts0[cat])
+                        scores_cat.extend(scores0[cat])
+                    pts_cat = np.asarray(pts_cat, np.float32)
+                    scores_cat = np.asarray(scores_cat, np.float32)
+                    if pts_cat.shape[0]:
+                        nms_results = non_maximum_suppression(pts_cat, scores_cat)
+                        results[cat][img_id].extend(nms_results)
+                if print_ps:
+                    print('testing {}/{} data {}'.format(index+1, len(dsets), img_id))
+            img_list = []
+            img_id_list = []
 
     for cat in dsets.category:
         if cat == 'background':

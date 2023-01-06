@@ -19,7 +19,7 @@ def collater(data):
 
 class TrainModule(object):
     def __init__(self, dataset, num_classes, model, decoder, down_ratio):
-
+        torch.manual_seed(317)
         self.dataset = dataset
         self.dataset_phase = {'dota': ['train', 'test'],
                               'hrsc': ['train', 'test']}
@@ -28,7 +28,6 @@ class TrainModule(object):
         self.model = model
         self.decoder = decoder
         self.down_ratio = down_ratio
-
 
     def save_model(self, path, epoch, model, optimizer):
         if isinstance(model, torch.nn.DataParallel):
@@ -135,10 +134,9 @@ class TrainModule(object):
         for epoch in range(start_epoch, args.num_epoch+1):
             print('-'*10)
             print('Epoch: {}/{} '.format(epoch, args.num_epoch))
-            epoch_loss, loss_list = self.run_epoch_accumulation(phase='train',
-                                                   data_loader=dsets_loader['train'],
-                                                   criterion=criterion,
-                                                   acstps=args.accumulation_steps)
+            epoch_loss, loss_list = self.run_epoch(phase='train',
+                                                    data_loader=dsets_loader['train'],
+                                                    criterion=criterion)
             train_loss.append(epoch_loss)
             self.scheduler.step(epoch)
 
@@ -156,7 +154,7 @@ class TrainModule(object):
                                 self.model,
                                 self.optimizer)
 
-            if 'test' in self.dataset_phase[args.dataset] and epoch % 10 == 0:
+            if 'test' in self.dataset_phase[args.dataset] and epoch% 1 == 0:
                 mAP = self.dec_eval(args, dsets['test'])
                 # 将ap绘制tensorboard
                 self.writer.add_scalar('mAP', mAP, epoch)
@@ -201,39 +199,6 @@ class TrainModule(object):
             loss_list.append(loss)
             running_loss += loss.item()
         epoch_loss = running_loss / len(data_loader)
-        print('{} loss: {}'.format(phase, epoch_loss))
-        if phase == 'train':
-            return epoch_loss, loss_list
-        return epoch_loss
-
-    def run_epoch_accumulation(self, phase, data_loader, criterion, acstps=1):
-        if phase == 'train':
-            self.model.train()
-            self.optimizer.zero_grad()
-        else:
-            self.model.eval()
-        running_loss = 0.
-        loss_list = []
-
-        for index, data_dict in enumerate(data_loader):
-            for name in data_dict:
-                data_dict[name] = data_dict[name].to(device=self.device, non_blocking=True)
-            if phase == 'train':
-                with torch.enable_grad():
-                    pr_decs = self.model(data_dict['input'])
-                    loss = criterion(pr_decs, data_dict) / acstps
-                    loss.backward()
-                    if (index + 1) % acstps == 0:
-                        self.optimizer.step()
-                        self.optimizer.zero_grad()
-            else:
-                with torch.no_grad():
-                    pr_decs = self.model(data_dict['input'])
-                    loss = criterion(pr_decs, data_dict)
-            # 存储loss输出
-            loss_list.append(loss * acstps)
-            running_loss += loss.item()
-        epoch_loss = running_loss / len(data_loader) * acstps
         print('{} loss: {}'.format(phase, epoch_loss))
         if phase == 'train':
             return epoch_loss, loss_list

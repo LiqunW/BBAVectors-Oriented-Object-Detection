@@ -46,56 +46,6 @@ class DecDecoder(object):
         feat = self._gather_feat(feat, ind)
         return feat
 
-    # def ctdet_decode(self, pr_decs):
-    #     heat = pr_decs['hm']
-    #     wh = pr_decs['wh']
-    #     reg = pr_decs['reg']
-    #     cls_theta = pr_decs['cls_theta']
-    #
-    #     batch, c, height, width = heat.size()
-    #     heat = self._nms(heat)
-    #
-    #     scores, inds, clses, ys, xs = self._topk(heat)
-    #     reg = self._tranpose_and_gather_feat(reg, inds)
-    #     reg = reg.view(batch, self.K, 2)
-    #     xs = xs.view(batch, self.K, 1) + reg[:, :, 0:1]
-    #     ys = ys.view(batch, self.K, 1) + reg[:, :, 1:2]
-    #     clses = clses.view(batch, self.K, 1).float()
-    #     scores = scores.view(batch, self.K, 1)
-    #     wh = self._tranpose_and_gather_feat(wh, inds)
-    #     wh = wh.view(batch, self.K, 10)
-    #     # add
-    #     cls_theta = self._tranpose_and_gather_feat(cls_theta, inds)
-    #     cls_theta = cls_theta.view(batch, self.K, 1)
-    #     mask = (cls_theta>0.8).float().view(batch, self.K, 1)
-    #     #
-    #     tt_x = (xs+wh[..., 0:1])*mask + (xs)*(1.-mask) # 上边x距离
-    #     tt_y = (ys+wh[..., 1:2])*mask + (ys-wh[..., 9:10]/2)*(1.-mask) # 上边y距离
-    #     rr_x = (xs+wh[..., 2:3])*mask + (xs+wh[..., 8:9]/2)*(1.-mask) #右边 x距离
-    #     rr_y = (ys+wh[..., 3:4])*mask + (ys)*(1.-mask) # 右边y距离
-    #     bb_x = (xs+wh[..., 4:5])*mask + (xs)*(1.-mask) # 下边x距离
-    #     bb_y = (ys+wh[..., 5:6])*mask + (ys+wh[..., 9:10]/2)*(1.-mask) # 下边y距离
-    #     ll_x = (xs+wh[..., 6:7])*mask + (xs-wh[..., 8:9]/2)*(1.-mask) # 左边x距离
-    #     ll_y = (ys+wh[..., 7:8])*mask + (ys)*(1.-mask)  # 左边y距离
-    #     #
-    #     detections = torch.cat([xs,                      # cen_x
-    #                             ys,                      # cen_y
-    #                             tt_x,
-    #                             tt_y,
-    #                             rr_x,
-    #                             rr_y,
-    #                             bb_x,
-    #                             bb_y,
-    #                             ll_x,
-    #                             ll_y,
-    #                             scores,
-    #                             clses],
-    #                            dim=2)
-    #
-    #     index = (scores>self.conf_thresh).squeeze(0).squeeze(1)
-    #     detections = detections[:,index,:]
-    #     return detections.data.cpu().numpy()
-
     def ctdet_decode(self, pr_decs):
         heat = pr_decs['hm']
         wh = pr_decs['wh']
@@ -113,26 +63,23 @@ class DecDecoder(object):
         clses = clses.view(batch, self.K, 1).float()
         scores = scores.view(batch, self.K, 1)
         wh = self._tranpose_and_gather_feat(wh, inds)
-        wh = wh.view(batch, self.K, 4)
+        wh = wh.view(batch, self.K, 10)
         # add
         cls_theta = self._tranpose_and_gather_feat(cls_theta, inds)
         cls_theta = cls_theta.view(batch, self.K, 1)
-        mask = (cls_theta > 0.95).float().view(batch, self.K, 1) # 是否为旋转框
+        mask = (cls_theta>0.8).float().view(batch, self.K, 1)
         #
-        tt_x = (xs - wh[..., 2:3] / 2) * mask + (xs - wh[..., 2:3] / 2) * (1. - mask)  # 左上x
-        tt_y = (ys - wh[..., 1:2] ) * mask + (ys - wh[..., 3:4] / 2) * (1. - mask)  # 左上x
-
-        rr_x = (xs + wh[..., 0:1] ) * mask + (xs + wh[..., 2:3] / 2) * (1. - mask)  # 右上x
-        rr_y = (ys - wh[..., 3:4] / 2) * mask + (ys - wh[..., 3:4] / 2) * (1. - mask)  # 左上x
-
-        bb_x = (xs + wh[..., 2:3] / 2) * mask + (xs + wh[..., 2:3] / 2) * (1. - mask)  # 右下x
-        bb_y = (ys + wh[..., 1:2] ) * mask + (ys + wh[..., 3:4] / 2) * (1. - mask)  # # 右下y
-
-        ll_x = (xs - wh[..., 0:1]) * mask + (xs - wh[..., 2:3] / 2) * (1. - mask)  # 左下x
-        ll_y = (ys + wh[..., 3:4] / 2) * mask + (ys + wh[..., 3:4] / 2) * (1. - mask) # 左下y
+        tt_x = (xs+wh[..., 0:1])*mask + (xs)*(1.-mask)
+        tt_y = (ys+wh[..., 1:2])*mask + (ys-wh[..., 9:10]/2)*(1.-mask)
+        rr_x = (xs+wh[..., 2:3])*mask + (xs+wh[..., 8:9]/2)*(1.-mask)
+        rr_y = (ys+wh[..., 3:4])*mask + (ys)*(1.-mask)
+        bb_x = (xs+wh[..., 4:5])*mask + (xs)*(1.-mask)
+        bb_y = (ys+wh[..., 5:6])*mask + (ys+wh[..., 9:10]/2)*(1.-mask)
+        ll_x = (xs+wh[..., 6:7])*mask + (xs-wh[..., 8:9]/2)*(1.-mask)
+        ll_y = (ys+wh[..., 7:8])*mask + (ys)*(1.-mask)
         #
-        detections = torch.cat([xs,  # cen_x
-                                ys,  # cen_y
+        detections = torch.cat([xs,                      # cen_x
+                                ys,                      # cen_y
                                 tt_x,
                                 tt_y,
                                 rr_x,
@@ -145,6 +92,6 @@ class DecDecoder(object):
                                 clses],
                                dim=2)
 
-        index = (scores > self.conf_thresh).squeeze(0).squeeze(1)
-        detections = detections[:, index, :]
+        index = (scores>self.conf_thresh).squeeze(0).squeeze(1)
+        detections = detections[:,index,:]
         return detections.data.cpu().numpy()

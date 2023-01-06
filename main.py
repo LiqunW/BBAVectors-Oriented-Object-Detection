@@ -1,4 +1,4 @@
-seed_ = 317
+seed_ = 1209
 import torch
 import random
 import numpy as np
@@ -24,19 +24,17 @@ def parse_args():
     parser = argparse.ArgumentParser(description='BBAVectors Implementation')
     parser.add_argument('--num_epoch', type=int, default=300, help='Number of epochs')
     parser.add_argument('--batch_size', type=int, default=8, help='Number of batch size')
-    parser.add_argument('--num_workers', type=int, default=4, help='Number of workers')
+    parser.add_argument('--num_workers', type=int, default=1, help='Number of workers')
     parser.add_argument('--init_lr', type=float, default=1.25e-4, help='Initial learning rate')
     parser.add_argument('--input_h', type=int, default=608, help='Resized image height')
     parser.add_argument('--input_w', type=int, default=608, help='Resized image width')
     parser.add_argument('--K', type=int, default=500, help='Maximum of objects')
-    parser.add_argument('--accumulation_steps', type=int, default=1, help='梯度传播参数')
     parser.add_argument('--conf_thresh', type=float, default=0.18, help='Confidence threshold, 0.1 for general evaluation')
     parser.add_argument('--ngpus', type=int, default=1, help='Number of gpus, ngpus>1 for multigpu')
-    parser.add_argument('--checkpoint', type=str, default='./0106', help='checkpoint save pth')
+    parser.add_argument('--checkpoint', type=str, default='./debug', help='checkpoint save pth')
     parser.add_argument('--resume_train', type=str, default='', help='Weights resumed in training')
-    parser.add_argument('--resume', type=str, default='',
-                        help='Weights resumed in testing and evaluation')
-    parser.add_argument('--dataset', type=str, default='dota', help='Name of dataset, dota|hrsc')
+    parser.add_argument('--resume', type=str, default='', help='Weights resumed in testing and evaluation')
+    parser.add_argument('--dataset', type=str, default='dota', help='Name of dataset hrsc|dota')
     parser.add_argument('--data_dir', type=str, default='/workspace/fuye/Oriented-Object-Detection/DOTA1_0',
                         help='Data directory')
     parser.add_argument('--phase', type=str, default='train', help='Phase choice= {train, test, eval}')
@@ -44,12 +42,13 @@ def parse_args():
     args = parser.parse_args()
     return args
 
+
 if __name__ == '__main__':
     args = parse_args()
     dataset = {'dota': DOTA, 'hrsc': HRSC}
     num_classes = {'dota': 15, 'hrsc': 1}
     heads = {'hm': num_classes[args.dataset],
-             'wh': 4,
+             'wh': 10,
              'reg': 2,
              'cls_theta': 1
              }
@@ -60,20 +59,20 @@ if __name__ == '__main__':
                               final_kernel=1,
                               head_conv=256)
 
-    decoder_ = decoder.DecDecoder(K=args.K,
+    decoder = decoder.DecDecoder(K=args.K,
                                  conf_thresh=args.conf_thresh,
                                  num_classes=num_classes[args.dataset])
     if args.phase == 'train':
         ctrbox_obj = train.TrainModule(dataset=dataset,
                                        num_classes=num_classes,
                                        model=model,
-                                       decoder=decoder_,
-                                       down_ratio=down_ratio
-                                       )
+                                       decoder=decoder,
+                                       down_ratio=down_ratio)
+
         ctrbox_obj.train_network(args)
     elif args.phase == 'test':
-        ctrbox_obj = test.TestModule(dataset=dataset, num_classes=num_classes, model=model, decoder=decoder_)
+        ctrbox_obj = test.TestModule(dataset=dataset, num_classes=num_classes, model=model, decoder=decoder)
         ctrbox_obj.test(args, down_ratio=down_ratio)
     else:
-        ctrbox_obj = eval.EvalModule(dataset=dataset, num_classes=num_classes, model=model, decoder=decoder_)
+        ctrbox_obj = eval.EvalModule(dataset=dataset, num_classes=num_classes, model=model, decoder=decoder)
         ctrbox_obj.evaluation(args, down_ratio=down_ratio)

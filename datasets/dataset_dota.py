@@ -123,6 +123,7 @@ class DOTA(BaseDataset):
     def merge_crop_image_results(self, result_path, merge_path):
         mergebypoly(result_path, merge_path)
 
+
     def dec_evaluation(self, result_path):
         detpath = os.path.join(result_path, 'Task1_{}.txt')
         annopath = os.path.join(self.label_path, '{}.txt')  # change the directory to the path of val/labelTxt, if you want to do evaluation on the valset

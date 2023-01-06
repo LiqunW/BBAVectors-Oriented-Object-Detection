@@ -44,14 +44,15 @@ class EvalModule(object):
                                  self.device,
                                  self.decoder,
                                  result_path,
-                                 print_ps=False)
+                                 print_ps=True)
 
         if args.dataset == 'dota':
             merge_path = 'merge_'+args.dataset
             if not os.path.exists(merge_path):
                 os.mkdir(merge_path)
             dsets.merge_crop_image_results(result_path, merge_path)
-            return None
+            ap = dsets.dec_evaluation(result_path)
+            return ap
         else:
             ap = dsets.dec_evaluation(result_path)
             return ap
